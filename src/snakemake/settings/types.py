@@ -237,6 +237,7 @@ class StorageSettings(SettingsBase, StorageSettingsExecutorInterface):
     all_temp: bool = False
     unneeded_temp_files: AnySet[str] = frozenset()
     wait_for_free_local_storage: Optional[int] = None
+    input_passthrough_mapping: Mapping[str, str] = immutables.Map()
 
     def __post_init__(self):
         if self.remote_job_local_storage_prefix is None:

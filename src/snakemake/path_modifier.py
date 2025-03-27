@@ -116,6 +116,7 @@ class PathModifier:
             or is_flagged(path, "local")
             or is_flagged(path, "sourcecache_entry")
             or is_annotated_callable(path)
+            or is_flagged(path, "passthrough")
         ):
             # no default remote needed
             return path

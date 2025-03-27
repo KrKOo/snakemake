@@ -285,6 +285,15 @@ def parse_group_components(args):
             group_components[group] = count
     return group_components
 
+def parse_input_passthrough_mapping(args):
+    errmsg = "Invalid input passthrough mapping: entries have to be defined as LOCAL_PATH=REMOTE_PATH pairs"
+    input_passthrough_mapping = dict()
+    if args is not None:
+        for entry in args:
+            local_path, remote_path = parse_key_value_arg(entry, errmsg=errmsg)
+            input_passthrough_mapping[local_path.lstrip("/")] = remote_path
+    return input_passthrough_mapping
+
 
 def _bool_parser(value):
     if value == "True":
@@ -1503,6 +1512,13 @@ def get_argument_parser(profiles=None):
         "provider.",
     )
     group_behavior.add_argument(
+        "--input-passthrough-mapping",
+        nargs="+",
+        default=dict(),
+        parse_func=parse_input_passthrough_mapping,
+        help="Map input files to be passed through to the executor without downloading them."
+    )
+    group_behavior.add_argument(
         "--scheduler-greediness",
         "--greediness",
         type=float,
@@ -2013,6 +2029,7 @@ def args_to_api(args, parser):
                 all_temp=args.all_temp,
                 unneeded_temp_files=args.unneeded_temp_files,
                 wait_for_free_local_storage=args.wait_for_free_local_storage,
+                input_passthrough_mapping=args.input_passthrough_mapping,
             )
 
             if args.deploy_sources:

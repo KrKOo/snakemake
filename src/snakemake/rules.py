@@ -29,6 +29,7 @@ from snakemake.io import (
     contains_wildcard_constraints,
     get_flag_store_keys,
     is_multiext_items,
+    passthrough,
     update_wildcard_constraints,
     flag,
     get_flag_value,
@@ -429,6 +430,17 @@ class Rule(RuleInterface):
             )
         except ValueError as e:
             raise WorkflowError(e, snakefile=self.snakefile, lineno=self.lineno)
+        
+    def _get_passthrough_remote_path(self, item) -> typing.Optional[str]:
+        mapping = self.workflow.storage_settings.input_passthrough_mapping
+        if not mapping:
+            return None
+        local_path_candidates = [key for key in mapping if item.startswith(key)]
+        if not local_path_candidates:
+            return None
+        local_path = max(local_path_candidates, key=len)
+        suffix = item.replace(local_path, "").lstrip("/")
+        return os.path.join(mapping[local_path], suffix) if suffix else mapping[local_path]
 
     def _set_inoutput_item(self, item, output=False, name=None, mark_ancient=False):
         """
@@ -469,6 +481,9 @@ class Rule(RuleInterface):
             else:
                 path_modifier = self.input_modifier
                 property = "input"
+                passthrough_remote_path = self._get_passthrough_remote_path(item)
+                if passthrough_remote_path:
+                    item = passthrough(passthrough_remote_path)
 
             item = self.apply_path_modifier(item, path_modifier, property=property)
 
@@ -495,7 +510,7 @@ class Rule(RuleInterface):
                                 item_flag, self
                             )
                         )
-                    if output and item_flag in ["ancient", "before_update"]:
+                    if output and item_flag in ["ancient", "before_update", "passthrough"]:
                         logger.warning(
                             "The flag '{}' used in rule {} is only valid for inputs, not outputs.".format(
                                 item_flag, self

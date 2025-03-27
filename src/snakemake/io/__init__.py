@@ -464,6 +464,13 @@ class _IOFile(str, AnnotatedStringInterface):
                 "This IOFile is specified as a function and "
                 "may not be used directly."
             )
+    @property
+    def is_passthrough(self):
+        return is_flagged(self._file, "passthrough")
+
+    @property
+    def passthrough_path(self):
+        return get_flag_value(self._file, "passthrough")
 
     def check(self):
         if callable(self._file):
@@ -1011,8 +1018,8 @@ async def wait_for_files(
     async def get_missing(list_parent=False):
         async def eval_file(f):
             if (
-                is_flagged(f, "pipe") or is_flagged(f, "service")
-            ) and ignore_pipe_or_service:
+                (is_flagged(f, "pipe") or is_flagged(f, "service")) and ignore_pipe_or_service
+            ) or is_flagged(f, "passthrough"):
                 return None
             if (
                 isinstance(f, _IOFile)
@@ -1199,6 +1206,14 @@ def temp(value, group_jobs=False):
         value = flag(value, "nodelocal")
     return flag(value, "temp")
 
+def passthrough(value, path=None):
+    if hasattr(value, "flags"):
+        raise SyntaxError("Passthrough flag can't be combined with any other flags.")
+
+    if path is None:
+        path = sha256(value.encode()).hexdigest()
+
+    return flag(path, "passthrough", value)
 
 @dataclass
 class QueueInfo:
