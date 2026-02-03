@@ -430,6 +430,7 @@ class DAG(DAGExecutorInterface, DAGReportInterface, DAGSchedulerInterface):
                                 f, inner_job, not_needrun_is_external=True
                             )
                         )
+                        and not is_flagged(f, "passthrough")
                     ):
                         to_retrieve[f].append(access_pattern(f))
 
@@ -1278,6 +1279,10 @@ class DAG(DAGExecutorInterface, DAGReportInterface, DAGSchedulerInterface):
         producer = dict()
         exceptions = dict()
         for res in potential_dependencies:
+            # passthrough files are not considered for dependency resolution
+            if is_flagged(res.file, "passthrough"):
+                continue
+
             if create_inventory:
                 # If possible, obtain inventory information starting from
                 # given file and store it in the IOCache.

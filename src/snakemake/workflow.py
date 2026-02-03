@@ -100,6 +100,7 @@ from snakemake.io import (
     report,
     multiext,
     ensure,
+    passthrough,
     from_queue,
     IOFile,
     sourcecache_entry,
